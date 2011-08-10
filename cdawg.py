@@ -25,7 +25,6 @@ def cdawg(w):
     # (s, (k, p - 1)) is the canonical reference pair for the active point.
     c = w[p]
     oldr = None
-    #print "u: k =", k, ", p =", p
     while not check_end_point(s, (k, p - 1), c):
       if k <= p - 1: # Implicit case.
         if s1 == extension(s, (k, p - 1)):
@@ -37,16 +36,12 @@ def cdawg(w):
           r = split_edge(s, (k, p - 1))
       else: # Explicit case.
         r = s
-      # TODO: use reference to e rather than big number...
       r.to[w[p]] = ((p, e), sink)
       if oldr != None:
-        print "B"
         oldr.suf = r
       oldr = r
       (s, k) = canonize(s.suf, (k, p - 1))
-      #print "k =", k, ", p =", p
     if oldr != None:
-      print "C"
       oldr.suf = s
     return separate_node(s, (k, p))
   def extension(s, (k, p)):
@@ -69,7 +64,6 @@ def cdawg(w):
     r.len = s.len + (p - k + 1)
     return r
   def separate_node(s, (k, p)):
-    #print "separate_node p=", p
     (s1, k1) = canonize(s, (k, p))
     # Implicit case.
     if k1 <= p:
@@ -81,7 +75,6 @@ def cdawg(w):
     # Create node r1 as a duplication of s1, together with the out-going
     # edges of s1
     r1 = Node(s1)
-    print "A"
     r1.suf = s1.suf
     s1.suf = r1
     r1.len = s.len + (p - k + 1)
@@ -93,23 +86,17 @@ def cdawg(w):
         break
     return (r1, p + 1)
   def check_end_point(s, (k, p), c):
-    #print s
-    print k, p
     if k <= p: # Implicit case.
       ((k1, p1), s1) = s.to[w[k]]
       return c == w[k1 + p - k + 1]
     else:
-      print "CHECK", c
       return c in s.to
   def canonize(s, (k, p)):
-    #print "k =", k, ", p =", p
     if k > p:
       return (s, k)
     ((k1, p1), s1) = s.to[w[k]]
-    print "c =", w[k]
     while p1 - k1 <= p - k:
       k = k + p1 - k1 + 1
-      print "k1 =", k1, "p1 =", p1, "k =", k
       s = s1
       if k <= p:
         ((k1, p1), s1) = s.to[w[k]]
@@ -123,7 +110,6 @@ def cdawg(w):
   for j in range(1,m):
     # Create a new edge (_|_, (-j, -j), source).
     bt.to[w[-j]] = ((-j, -j), source)
-  print "D"
   source.suf = bt
   source.len = 0
   bt.len = -1
