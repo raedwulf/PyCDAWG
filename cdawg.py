@@ -56,7 +56,7 @@ class Edge:
         self.dst = dst
 
 
-def cdawg(w):
+def cdawg(ws):
 
     def update(s, (k, p)):
         # (s, (k, p - 1)) is the canonical reference pair for the active point.
@@ -146,7 +146,15 @@ def cdawg(w):
                 ((k1, p1), s1) = s.to[w[k]]
         return (s, k)
 
-    m = len(w)
+    # Keep track of all of the lengths of each subword.
+    w = ''
+    m = j = 0
+    e = []
+    for _w in ws:
+        j += 1
+        w += _w + unichr(255 + j)
+        e.append(m + len(_w))
+        m = len(w)
 
     # Create the nodes source, sink and _|_.
     source = Node(id='source')
@@ -159,14 +167,6 @@ def cdawg(w):
     source.suf = bt
     source.len = 0
     bt.len = -1
-
-    # Keep track of all of the lengths of each subword.
-    j = 0
-    e = []
-    for i in range(0,len(w)):
-        if w[i] == '$':
-            e.append(i)
-            j += 1
 
     (s, k) = (source, 0)
     i = j = 0
@@ -181,12 +181,11 @@ def cdawg(w):
             i += 1
         i += 1
         j += 1
-    return bt
+    return w, bt
 
 
 if __name__ == '__main__':
-    word = sys.argv[1]
-    root = cdawg(word)
+    word, root = cdawg(sys.argv[1:])
 
     graph = pydot.Dot(graph_type='digraph')
     node_root = pydot.Node('root')
@@ -208,7 +207,25 @@ if __name__ == '__main__':
                 l = word[v[0][0]:v[0][1] + 1]
             else:
                 l = word[v[0][0] - 1:v[0][1]]
-            graph.add_edge(pydot.Edge(nodes[n.id], node, label=l,
+            # Replace the label with something more readable
+            label = ''
+            for c in l:
+                uc = ord(c)
+                if uc < 256:
+                    label += c
+                else:
+                    ucn = uc - 256
+                    ln = ''
+                    while True:
+                        # pydot doesn't work with unicode :/
+                        #label = unichr(0x208 + (ucn % 10))
+                        ln = chr(ord('0') + ucn % 10) + ln
+                        ucn /= 10
+                        if ucn == 0:
+                            break
+                    label += '$[' + ln + ']'
+
+            graph.add_edge(pydot.Edge(nodes[n.id], node, label=label,
                            style='solid'))
             if need_traverse:
                 traverse_nodes(v[1])
