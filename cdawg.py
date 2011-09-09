@@ -3,7 +3,6 @@
 """
 PyCDAWG 0.0.0
 Copyright (C) 2011 by Tai Chi Minh Ralph Eastwood
-v
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
