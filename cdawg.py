@@ -25,7 +25,7 @@ THE SOFTWARE.
 """
 
 import sys
-import pydot
+import pygraphviz
 
 # Node class.
 class Node:
@@ -187,46 +187,50 @@ def cdawg(ws):
 if __name__ == '__main__':
     word, root = cdawg(sys.argv[1:])
 
-    graph = pydot.Dot(graph_type='digraph')
-    node_root = pydot.Node('root')
-    graph.add_node(node_root)
-    nodes = {'root': node_root}
+    graph = pygraphviz.AGraph(strict=False,directed=True)
+    graph.node_attr['fontname'] = 'Sans 12'
+    graph.edge_attr['fontname'] = 'Sans 12'
+    graph.graph_attr['fontname'] = 'Sans 12'
+    graph.add_node('root')
+    nodes = ['root']
     internal_nodes = [root]
+
+    def translate_label(l):
+        # replace the label with something more readable
+        label = ''
+        for c in l:
+            uc = ord(c)
+            if uc < 256:
+                label += c
+            else:
+                ucn = uc - 256
+                ln = ''
+                while True:
+                    ln = unichr(0x2080 + (ucn % 10)) + ln
+                    ucn /= 10
+                    if ucn == 0:
+                        break
+                label += '$' + ln
+        return label
 
     def traverse_nodes(n):
         for (k, v) in n.to.items():
             need_traverse = False
-            if v[1].id in nodes:
-                node = nodes[v[1].id]
-            else:
-                node = nodes[v[1].id] = pydot.Node(v[1].id)
+            # check if node needs creating
+            node = v[1].id
+            if v[1].id not in nodes:
+                nodes.append(node)
                 internal_nodes.append(v[1])
                 graph.add_node(node)
                 need_traverse = True
+            # get the label
             if v[0][0] >= 0:
                 l = word[v[0][0]:v[0][1] + 1]
             else:
                 l = word[v[0][0] - 1:v[0][1]]
-            # Replace the label with something more readable
-            label = ''
-            for c in l:
-                uc = ord(c)
-                if uc < 256:
-                    label += c
-                else:
-                    ucn = uc - 256
-                    ln = ''
-                    while True:
-                        # pydot doesn't work with unicode :/
-                        #label = unichr(0x208 + (ucn % 10))
-                        ln = chr(ord('0') + ucn % 10) + ln
-                        ucn /= 10
-                        if ucn == 0:
-                            break
-                    label += '$[' + ln + ']'
-
-            graph.add_edge(pydot.Edge(nodes[n.id], node, label=label,
-                           style='solid'))
+            # add the edge
+            graph.add_edge(n.id, node, l, label=translate_label(l),
+                           style='solid')
             if need_traverse:
                 traverse_nodes(v[1])
 
@@ -235,7 +239,8 @@ if __name__ == '__main__':
     for n in internal_nodes:
         print n.id
         if n.suf:
-            graph.add_edge(pydot.Edge(nodes[n.id], nodes[n.suf.id],
-                           style='dashed'))
+            graph.add_edge(n.id, n.suf.id,
+                           style='dashed')
 
-    graph.write_png('out.png')
+    graph.layout(prog='dot')
+    graph.draw('out.png')

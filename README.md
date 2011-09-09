@@ -17,10 +17,10 @@ Please see LICENSE for license information; it is the MIT/Expat license.
 What does it do?
 ----------------
 
-This implementation uses pydot (http://code.google.com/p/pydot/) to create
+This implementation uses pygraphviz(http://networkx.lanl.gov/pygraphviz/) to create
 an image **out.png** that will show the created CDAWG.
 
-To run use `python2 cdawg.py "cocoa\$cola\$"`
+To run use `python2 cdawg.py "cocoa cola"`
 
 What's next?
 ------------
