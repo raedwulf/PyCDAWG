@@ -3,6 +3,7 @@
 """
 PyCDAWG 0.0.0
 Copyright (C) 2011 by Tai Chi Minh Ralph Eastwood
+v
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -163,7 +164,7 @@ def cdawg(w):
     j = 0
     e = []
     for i in range(0,len(w)):
-        if w[i] == '$' or w[i] == '%':
+        if w[i] == '$':
             e.append(i)
             j += 1
 
@@ -175,7 +176,7 @@ def cdawg(w):
         sink.length = e[j]
         while True:
             (s, k) = update(s, (k, i))
-            if w[i] == '$' or w[i] == '%':
+            if i == e[j]:
                 break
             i += 1
         i += 1

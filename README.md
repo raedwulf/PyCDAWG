@@ -20,7 +20,7 @@ What does it do?
 This implementation uses pydot (http://code.google.com/p/pydot/) to create
 an image **out.png** that will show the created CDAWG.
 
-To run use `python2 cdawg.py word$`
+To run use `python2 cdawg.py "cocoa\$cola\$"`
 
 What's next?
 ------------
