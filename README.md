@@ -1,4 +1,4 @@
-CDAWG implementation in Python
+PyCDAWG - CDAWG in python
 ==============================
 
 Introduction
