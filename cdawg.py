@@ -1,6 +1,6 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python2
 
+import sys
 import pydot
 
 # Node class.
@@ -8,11 +8,11 @@ class Node:
 
     sid_count = 0
 
-    def __init__(self, id='', a=None):
-        if a != None and isinstance(a, Node):
-            self.len = a.len
-            self.suf = a.suf
-            self.to = a.to
+    def __init__(self, id='', n=None):
+        if n != None and isinstance(n, Node):
+            self.len = n.len
+            self.suf = n.suf
+            self.to = n.to
         else:
             self.len = 0
             self.suf = None
@@ -26,12 +26,7 @@ class Node:
 # Edge class.
 class Edge:
 
-    def __init__(
-        self,
-        src,
-        substr,
-        dst,
-        ):
+    def __init__(self, src, substr, dst):
         self.src = src
         self.substr = substr
         self.dst = dst
@@ -55,7 +50,7 @@ def cdawg(w):
                     r = split_edge(s, (k, p - 1))
             else:
                 r = s # Explicit case.
-            r.to[w[p]] = ((p, e), sink)
+            r.to[w[p]] = ((p, e[j]), sink)
             if oldr != None:
                 oldr.suf = r
             oldr = r
@@ -97,7 +92,7 @@ def cdawg(w):
         # Non-solid case.
         # Create node r1 as a duplication of s1, together with the out-going
         # edges of s1
-        r1 = Node(s1)
+        r1 = Node(n=s1)
         r1.suf = s1.suf
         s1.suf = r1
         r1.len = s.len + p - k + 1
@@ -131,37 +126,49 @@ def cdawg(w):
 
     # Create the nodes source, sink and _|_.
     source = Node(id='source')
-    sink = Node(id='sink')
     bt = Node(id='root')
-    for j in range(1, m):
+    for j in range(0, m):
         # Create a new edge (_|_, (-j, -j), source).
-        bt.to[w[-j]] = ((-j, -j), source)
-        #bt.to[w[j]] = ((j, j), source)
+        #bt.to[w[-j]] = ((-j, -j), source)
+        bt.to[w[j]] = ((j, j), source)
 
     source.suf = bt
     source.len = 0
     bt.len = -1
-    e = len(w)
-    sink.len = e
+
+    # Keep track of all of the lengths of each subword.
+    j = 0
+    e = []
+    for i in range(0,len(w)):
+        if w[i] == '$' or w[i] == '%':
+            e.append(i)
+            j += 1
+
     (s, k) = (source, 0)
-    i = 0
-    while True:
-        (s, k) = update(s, (k, i))
-        if w[i] == '$':
-            break
-        i = i + 1
+    i = j = 0
+    while i < len(w):
+        # Create a new sink.
+        sink = Node(id='sink' + str(j))
+        sink.length = e[j]
+        while True:
+            (s, k) = update(s, (k, i))
+            if w[i] == '$' or w[i] == '%':
+                break
+            i += 1
+        i += 1
+        j += 1
     return bt
 
 
 if __name__ == '__main__':
-    word = 'cocoa$'
+    word = sys.argv[1]
     root = cdawg(word)
 
     graph = pydot.Dot(graph_type='digraph')
     node_root = pydot.Node('root')
     graph.add_node(node_root)
     nodes = {'root': node_root}
-
+    internal_nodes = [root]
 
     def traverse_nodes(n):
         for (k, v) in n.to.items():
@@ -170,6 +177,7 @@ if __name__ == '__main__':
                 node = nodes[v[1].id]
             else:
                 node = nodes[v[1].id] = pydot.Node(v[1].id)
+                internal_nodes.append(v[1])
                 graph.add_node(node)
                 need_traverse = True
             if v[0][0] >= 0:
@@ -180,10 +188,13 @@ if __name__ == '__main__':
                            style='solid'))
             if need_traverse:
                 traverse_nodes(v[1])
+
+    traverse_nodes(root)
+
+    for n in internal_nodes:
+        print n.id
         if n.suf:
             graph.add_edge(pydot.Edge(nodes[n.id], nodes[n.suf.id],
                            style='dashed'))
 
-
-    traverse_nodes(root)
     graph.write_png('out.png')
