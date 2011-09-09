@@ -54,8 +54,7 @@ class Edge:
         self.substr = substr
         self.dst = dst
 
-
-def cdawg(ws):
+def cdawg(w):
 
     def update(s, (k, p)):
         # (s, (k, p - 1)) is the canonical reference pair for the active point.
@@ -146,19 +145,12 @@ def cdawg(ws):
         return (s, k)
 
     # Keep track of all of the lengths of each subword.
-    w = ''
-    m = j = 0
     e = []
-    for _w in ws:
-        j += 1
-        w += _w + unichr(255 + j)
-        e.append(m + len(_w))
-        m = len(w)
 
     # Create the nodes source, sink and _|_.
     source = Node(id='source')
     bt = Node(id='root')
-    for j in range(0, m):
+    for j in range(0, len(w)):
         # Create a new edge (_|_, (-j, -j), source).
         #bt.to[w[-j]] = ((-j, -j), source)
         bt.to[w[j]] = ((j, j), source)
@@ -170,9 +162,16 @@ def cdawg(ws):
     (s, k) = (source, 0)
     i = j = 0
     while i < len(w):
+        # Get length of word
+        for n in range(i, len(w)):
+            if ord(w[n]) >= 256:
+                e.append(n)
+                break
         # Create a new sink.
         sink = Node(id='sink' + str(j))
+        print e[j]
         sink.length = e[j]
+        # Update new word
         while True:
             (s, k) = update(s, (k, i))
             if i == e[j]:
@@ -184,8 +183,18 @@ def cdawg(ws):
 
 
 if __name__ == '__main__':
-    word, root = cdawg(sys.argv[1:])
 
+    # Concatenate the input words and separate using unique symbols.
+    w = ''
+    i = 0
+    for _w in sys.argv[1:]:
+        w += _w + unichr(256 + i)
+        i += 1
+
+    # Process the CDAWG.
+    word, root = cdawg(w)
+
+    # Create the graph.
     graph = pygraphviz.AGraph(strict=False,directed=True)
     graph.node_attr['fontname'] = 'Sans 12'
     graph.edge_attr['fontname'] = 'Sans 12'
@@ -194,8 +203,8 @@ if __name__ == '__main__':
     nodes = ['root']
     internal_nodes = [root]
 
+    # Replace the label with symbol end marks with something more readable.
     def translate_label(l):
-        # replace the label with something more readable
         label = ''
         for c in l:
             uc = ord(c)
@@ -215,31 +224,34 @@ if __name__ == '__main__':
     def traverse_nodes(n):
         for (k, v) in n.to.items():
             need_traverse = False
-            # check if node needs creating
+            # Check if node needs creating.
             node = v[1].id
             if v[1].id not in nodes:
                 nodes.append(node)
                 internal_nodes.append(v[1])
                 graph.add_node(node)
                 need_traverse = True
-            # get the label
+            # Get the label.
             if v[0][0] >= 0:
                 l = word[v[0][0]:v[0][1] + 1]
             else:
                 l = word[v[0][0] - 1:v[0][1]]
-            # add the edge
+            # Add the edge.
             graph.add_edge(n.id, node, l, label=translate_label(l),
                            style='solid')
             if need_traverse:
                 traverse_nodes(v[1])
 
+    # Recursively create nodes and edges.
     traverse_nodes(root)
 
+    # Add the suffix links on the graph.
     for n in internal_nodes:
         print n.id
         if n.suf:
             graph.add_edge(n.id, n.suf.id,
                            style='dashed')
 
+    # Layout & draw the graph.
     graph.layout(prog='dot')
     graph.draw('out.png')
