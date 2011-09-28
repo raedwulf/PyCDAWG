@@ -63,7 +63,7 @@ class cdawg:
         self.w = ''
         self.values = {}
 
-    def update(self, s, (k, p)):
+    def __update(self, s, (k, p)):
         w = self.w
         e = self.e
         j = self.j
@@ -156,7 +156,28 @@ class cdawg:
             oldr.suf = s
         return separate_node(s, (k, p))
 
+    def __findend(self, k):
+        def traverse_nodes(n, key, i):
+            for (c, ((k, p), n1)) in n.to.items():
+                if c == key[i]:
+                    if key[i:i+p-k] == self.w[k:p]:
+                        if len(key) == i + p - k:
+                            return self.w[p]
+                        else:
+                            traverse_nodes(n1, key, i+p-k)
+                    else:
+                        return None
+        return traverse_nodes(self.source, k, 0)
+
+    def __contains__(self, k):
+        return self.__findend(k) != None
+
     def __setitem__(self, k, v):
+        # Check if the entry already exist.
+        end = self.__findend(k)
+        if end != None:
+            self.values[end] = v
+            return
         self.e.append(self.i + len(w))
         # Create a new sink.
         self.sink = node(id='sink' + str(self.j))
@@ -170,23 +191,17 @@ class cdawg:
             if self.w[i] not in self.bt.to:
                 self.bt.to[self.w[i]] = ((i, i), self.source)
             (s, k) = self.sk
-            self.sk = self.update(s, (k, i))
+            self.sk = self.__update(s, (k, i))
         self.i = len(self.w)
         self.j += 1
         self.values[end] = v
 
-    def __getitem__(self, key):
-        def traverse_nodes(n, key, i):
-            for (c, ((k, p), n1)) in n.to.items():
-                if c == key[i]:
-                    if key[i:i+p-k] == self.w[k:p]:
-                        if len(key) == i + p - k:
-                            return self.values[self.w[p]]
-                        else:
-                            traverse_nodes(n1, key, i+p-k)
-                    else:
-                        return None
-        return traverse_nodes(self.source, key, 0)
+    def __getitem__(self, k):
+        end = self.__findend(k)
+        if end != None:
+            return self.values[end]
+        else: # TODO: Raise error instead?
+            return None
 
     def render(self, outfile):
         import pygraphviz
