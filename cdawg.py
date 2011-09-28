@@ -61,6 +61,7 @@ class cdawg:
         self.j = 0
         self.e = []
         self.w = ''
+        self.values = {}
 
     def update(self, s, (k, p)):
         w = self.w
@@ -155,14 +156,15 @@ class cdawg:
             oldr.suf = s
         return separate_node(s, (k, p))
 
-    def add(self, w):
+    def __setitem__(self, k, v):
         self.e.append(self.i + len(w))
         # Create a new sink.
         self.sink = node(id='sink' + str(self.j))
         self.sink.length = self.e[self.j]
         # Update new word
         self.w += w
-        self.w += unichr(256 + self.j)
+        end = unichr(256 + self.j)
+        self.w += end
         for i in range(self.i, len(self.w)):
             # Create a new edge (_|_, (-j, -j), source).
             if self.w[i] not in self.bt.to:
@@ -171,15 +173,20 @@ class cdawg:
             self.sk = self.update(s, (k, i))
         self.i = len(self.w)
         self.j += 1
+        self.values[end] = v
 
-    def tag(self, k, v):
-        pass
-
-    def pop(self, c):
-        pass
-
-    def __getitem__(self, k):
-        pass
+    def __getitem__(self, key):
+        def traverse_nodes(n, key, i):
+            for (c, ((k, p), n1)) in n.to.items():
+                if c == key[i]:
+                    if key[i:i+p-k] == self.w[k:p]:
+                        if len(key) == i + p - k:
+                            return self.values[self.w[p]]
+                        else:
+                            traverse_nodes(n1, key, i+p-k)
+                    else:
+                        return None
+        return traverse_nodes(self.source, key, 0)
 
     def render(self, outfile):
         import pygraphviz
@@ -216,20 +223,17 @@ class cdawg:
 
         def traverse_nodes(n):
             root_once = False
-            for (k, v) in n.to.items():
+            for (c, ((k, p), n1)) in n.to.items():
                 need_traverse = False
                 # Check if node needs creating.
-                node = v[1].id
-                if v[1].id not in nodes:
+                node = n1.id
+                if n1.id not in nodes:
                     nodes.append(node)
-                    internal_nodes.append(v[1])
+                    internal_nodes.append(n1)
                     graph.add_node(node)
                     need_traverse = True
                 # Get the label.
-                if v[0][0] >= 0:
-                    l = word[v[0][0]:v[0][1] + 1]
-                else:
-                    l = word[v[0][0] - 1:v[0][1]]
+                l = word[k:p+1]
                 # Add the edge.
                 if n.id == 'root':
                     if not root_once:
@@ -239,7 +243,7 @@ class cdawg:
                     graph.add_edge(n.id, node, l, label=translate_label(l),
                                    style='solid')
                 if need_traverse:
-                    traverse_nodes(v[1])
+                    traverse_nodes(n1)
 
         # Recursively create nodes and edges.
         traverse_nodes(root)
@@ -259,7 +263,9 @@ if __name__ == '__main__':
     # Concatenate the input words and separate using unique symbols.
     c = cdawg()
     for w in sys.argv[1:]:
-        c.add(w)
+        c[w] = "Testing 123"
+
+    print c['hello']
 
     # Draw
     c.render('out.png')
