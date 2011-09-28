@@ -199,7 +199,7 @@ if __name__ == '__main__':
     graph.node_attr['fontname'] = 'Sans 12'
     graph.edge_attr['fontname'] = 'Sans 12'
     graph.graph_attr['fontname'] = 'Sans 12'
-    graph.add_node('root')
+    graph.add_node(unichr(0x22a5))
     nodes = ['root']
     internal_nodes = [root]
 
@@ -222,6 +222,7 @@ if __name__ == '__main__':
         return label
 
     def traverse_nodes(n):
+        root_once = False
         for (k, v) in n.to.items():
             need_traverse = False
             # Check if node needs creating.
@@ -237,8 +238,13 @@ if __name__ == '__main__':
             else:
                 l = word[v[0][0] - 1:v[0][1]]
             # Add the edge.
-            graph.add_edge(n.id, node, l, label=translate_label(l),
-                           style='solid')
+            if n.id == 'root':
+                if not root_once:
+                    graph.add_edge(unichr(0x22a5), node, unichr(0x03a3), label=unichr(0x03a3))
+                    root_once = True
+            else:
+                graph.add_edge(n.id, node, l, label=translate_label(l),
+                               style='solid')
             if need_traverse:
                 traverse_nodes(v[1])
 
