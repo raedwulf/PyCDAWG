@@ -150,10 +150,6 @@ def cdawg(w):
     # Create the nodes source, sink and _|_.
     source = Node(id='source')
     bt = Node(id='root')
-    for j in range(0, len(w)):
-        # Create a new edge (_|_, (-j, -j), source).
-        #bt.to[w[-j]] = ((-j, -j), source)
-        bt.to[w[j]] = ((j, j), source)
 
     source.suf = bt
     source.len = 0
@@ -169,10 +165,13 @@ def cdawg(w):
                 break
         # Create a new sink.
         sink = Node(id='sink' + str(j))
-        print e[j]
         sink.length = e[j]
         # Update new word
         while True:
+            # Add new symbols to root
+            if w[i] not in bt.to:
+                # Create a new edge (_|_, (i, i), source).
+                bt.to[w[i]] = ((i, i), source)
             (s, k) = update(s, (k, i))
             if i == e[j]:
                 break
@@ -253,7 +252,6 @@ if __name__ == '__main__':
 
     # Add the suffix links on the graph.
     for n in internal_nodes:
-        print n.id
         if n.suf:
             graph.add_edge(n.id, n.suf.id,
                            style='dashed')
