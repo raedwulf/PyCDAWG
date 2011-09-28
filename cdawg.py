@@ -23,8 +23,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import sys
-
 # Node class.
 class node:
 
@@ -274,6 +272,7 @@ class cdawg:
         graph.draw(outfile)
 
 if __name__ == '__main__':
+    import sys
 
     # Concatenate the input words and separate using unique symbols.
     c = cdawg()
