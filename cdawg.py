@@ -45,6 +45,9 @@ class node:
             self.id = 's' + str(node.sid_count)
             node.sid_count += 1
 
+    def edge(self, c, (k, p), n):
+        self.to[c] = ((k, p), n)
+
 # Cdawg class
 class cdawg:
     def __init__(self):
@@ -77,7 +80,7 @@ class cdawg:
 
         def redirect_edge(s, (k, p), r):
             (k1, p1) = s.to[w[k]][0]
-            s.to[w[k1]] = ((k1, k1 + p - k), r)
+            s.edge(w[k1], (k1, k1 + p - k), r)
 
         def split_edge(s, (k, p)):
             # Let (s, (k1, p1), s1) be the w[k]-edge from s.
@@ -85,8 +88,8 @@ class cdawg:
             r = node()
             # Replace the edge by edges (s, (k1, k1 + p - k), r) and
             # (r, (k1 + p - k + 1, p1), s1).
-            s.to[w[k1]] = ((k1, k1 + p - k), r)
-            r.to[w[k1 + p - k + 1]] = ((k1 + p - k + 1, p1), s1)
+            s.edge(w[k1], (k1, k1 + p - k), r)
+            r.edge(w[k1 + p - k + 1], (k1 + p - k + 1, p1), s1)
             r.len = s.len + p - k + 1
             return r
 
@@ -108,7 +111,7 @@ class cdawg:
             r1.len = s.len + p - k + 1
             while True:
                 # Replace the w[k]-edge from s to s1 by edge (s, (k, p), r1)
-                s.to[w[k]] = ((k, p), r1)
+                s.edge(w[k], (k, p), r1)
                 (s, k) = canonize(s.suf, (k, p - 1))
                 if (s1, k1) != canonize(s, (k, p)):
                     break
@@ -147,7 +150,7 @@ class cdawg:
                     r = split_edge(s, (k, p - 1))
             else:
                 r = s # Explicit case.
-            r.to[w[p]] = ((p, e[j]), sink)
+            r.edge(w[p], (p, e[j]), sink)
             if oldr != None:
                 oldr.suf = r
             oldr = r
@@ -189,7 +192,7 @@ class cdawg:
         for i in range(self.i, len(self.w)):
             # Create a new edge (_|_, (-j, -j), source).
             if self.w[i] not in self.bt.to:
-                self.bt.to[self.w[i]] = ((i, i), self.source)
+                self.bt.edge(self.w[i], (i, i), self.source)
             (s, k) = self.sk
             self.sk = self.__update(s, (k, i))
         self.i = len(self.w)
