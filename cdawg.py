@@ -217,7 +217,7 @@ class cdawg:
         graph.node_attr['fontname'] = 'Sans 12'
         graph.edge_attr['fontname'] = 'Sans 12'
         graph.graph_attr['fontname'] = 'Sans 12'
-        graph.add_node('root')
+        graph.add_node(unichr(0x22a5))
         nodes = ['root']
         internal_nodes = [root]
 
@@ -251,7 +251,7 @@ class cdawg:
                     graph.add_node(node)
                     need_traverse = True
                 # Get the label.
-                l = word[k:p+1]
+                l = word[k-1:p]
                 # Add the edge.
                 if n.id == 'root':
                     if not root_once:
@@ -269,7 +269,11 @@ class cdawg:
         # Add the suffix links on the graph.
         for n in internal_nodes:
             if n.suf:
-                graph.add_edge(n.id, n.suf.id,
+                if n.suf.id == 'root':
+                    end = unichr(0x22a5)
+                else:
+                    end = n.suf.id
+                graph.add_edge(n.id, end,
                                style='dashed')
 
         # Layout & draw the graph.
