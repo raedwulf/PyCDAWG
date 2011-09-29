@@ -23,6 +23,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
+from copy import copy
+
 # Node class.
 class node:
 
@@ -32,7 +34,7 @@ class node:
         if n != None and isinstance(n, node):
             self.len = n.len
             self.suf = n.suf
-            self.to = n.to
+            self.to = copy(n.to)
         else:
             self.len = 0
             self.suf = None
