@@ -65,6 +65,7 @@ class cdawg:
         self.e = []
         self.w = ''
         self.values = {}
+        self.length = {}
 
     def __update(self, s, (k, p)):
         w = self.w
@@ -164,7 +165,7 @@ class cdawg:
             for (c, ((k, p), n1)) in n.to.items():
                 if c == key[i]:
                     if key[i:i+p-k] == self.w[k:p]:
-                        if len(key) == i + p - k:
+                        if len(key) == i + p - k and len(key) == self.length[self.w[p]]:
                             return self.w[p]
                         else:
                             traverse_nodes(n1, key, i+p-k)
@@ -175,9 +176,9 @@ class cdawg:
     def __contains__(self, k):
         return self.__findend(k) != None
 
-    def __setitem__(self, k, v):
+    def __setitem__(self, key, v):
         # Check if the entry already exist.
-        end = self.__findend(k)
+        end = self.__findend(key)
         if end != None:
             self.values[end] = v
             return
@@ -186,7 +187,7 @@ class cdawg:
         self.sink = node(id='sink' + str(self.j))
         self.sink.length = self.e[self.j]
         # Update new word
-        self.w += w
+        self.w += key
         end = unichr(256 + self.j)
         self.w += end
         for i in range(self.i, len(self.w)):
@@ -198,6 +199,7 @@ class cdawg:
         self.i = len(self.w)
         self.j += 1
         self.values[end] = v
+        self.length[end] = len(key)
 
     def __getitem__(self, k):
         end = self.__findend(k)
