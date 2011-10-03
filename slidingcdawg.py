@@ -65,97 +65,99 @@ class slidingcdawg:
         self.sink = node(id='sink')
         self.sink.length = self.e
 
+    def extension(self, s, (k, p)):
+        # (s, (k, p)) is a canonical reference pair.
+        if k > p:
+            return s
+        return s.to[self.w[k]][1]
+
+    def redirect_edge(self, s, (k, p), r):
+        (k1, p1) = s.to[self.w[k]][0]
+        s.to[self.w[k1]] = ((k1, k1 + p - k), r)
+
+    def split_edge(self, s, (k, p)):
+        # Let (s, (k1, p1), s1) be the w[k]-edge from s.
+        ((k1, p1), s1) = s.to[self.w[k]]
+        r = node()
+        # Replace the edge by edges (s, (k1, k1 + p - k), r) and
+        # (r, (k1 + p - k + 1, p1), s1).
+        s.to[self.w[k1]] = ((k1, k1 + p - k), r)
+        r.to[self.w[k1 + p - k + 1]] = ((k1 + p - k + 1, p1), s1)
+        r.len = s.len + p - k + 1
+        return r
+
+    def separate_node(self, s, (k, p)):
+        (s1, k1) = self.canonize(s, (k, p))
+        # Implicit case.
+        if k1 <= p:
+            return (s1, k1)
+        # Explicit case.
+        if s1.len == s.len + p - k + 1:  # Solid case.
+            return (s1, k1)
+
+        # Non-solid case.
+        # Create node r1 as a duplication of s1, together with the out-going
+        # edges of s1
+        r1 = node(n=s1)
+        r1.suf = s1.suf
+        s1.suf = r1
+        r1.len = s.len + p - k + 1
+        while True:
+            # Replace the w[k]-edge from s to s1 by edge (s, (k, p), r1)
+            s.to[self.w[k]] = ((k, p), r1)
+            (s, k) = self.canonize(s.suf, (k, p - 1))
+            if (s1, k1) != self.canonize(s, (k, p)):
+                break
+        return (r1, p + 1)
+
+    def check_end_point(self, s, (k, p), c):
+        if k <= p:  # Implicit case.
+            ((k1, p1), s1) = s.to[self.w[k]]
+            return c == self.w[k1 + p - k + 1]
+        else:
+            return c in s.to
+
+    def canonize(self, s, (k, p)):
+        if k > p:
+            return (s, k)
+        ((k1, p1), s1) = s.to[self.w[k]]
+        while p1 - k1 <= p - k:
+            k = k + p1 - k1 + 1
+            s = s1
+            if k <= p:
+                ((k1, p1), s1) = s.to[self.w[k]]
+        return (s, k)
+
     def __update(self, s, (k, p)):
         w = self.w
         e = self.e
         sink = self.sink
 
-        def extension(s, (k, p)):
-            # (s, (k, p)) is a canonical reference pair.
-            if k > p:
-                return s
-            return s.to[w[k]][1]
-
-        def redirect_edge(s, (k, p), r):
-            (k1, p1) = s.to[w[k]][0]
-            s.to[w[k1]] = ((k1, k1 + p - k), r)
-
-        def split_edge(s, (k, p)):
-            # Let (s, (k1, p1), s1) be the w[k]-edge from s.
-            ((k1, p1), s1) = s.to[w[k]]
-            r = node()
-            # Replace the edge by edges (s, (k1, k1 + p - k), r) and
-            # (r, (k1 + p - k + 1, p1), s1).
-            s.to[w[k1]] = ((k1, k1 + p - k), r)
-            r.to[w[k1 + p - k + 1]] = ((k1 + p - k + 1, p1), s1)
-            r.len = s.len + p - k + 1
-            return r
-
-        def separate_node(s, (k, p)):
-            (s1, k1) = canonize(s, (k, p))
-            # Implicit case.
-            if k1 <= p:
-                return (s1, k1)
-            # Explicit case.
-            if s1.len == s.len + p - k + 1:  # Solid case.
-                return (s1, k1)
-
-            # Non-solid case.
-            # Create node r1 as a duplication of s1, together with the out-going
-            # edges of s1
-            r1 = node(n=s1)
-            r1.suf = s1.suf
-            s1.suf = r1
-            r1.len = s.len + p - k + 1
-            while True:
-                # Replace the w[k]-edge from s to s1 by edge (s, (k, p), r1)
-                s.to[w[k]] = ((k, p), r1)
-                (s, k) = canonize(s.suf, (k, p - 1))
-                if (s1, k1) != canonize(s, (k, p)):
-                    break
-            return (r1, p + 1)
-
-        def check_end_point(s, (k, p), c):
-            if k <= p:  # Implicit case.
-                ((k1, p1), s1) = s.to[w[k]]
-                return c == w[k1 + p - k + 1]
-            else:
-                return c in s.to
-
-        def canonize(s, (k, p)):
-            if k > p:
-                return (s, k)
-            ((k1, p1), s1) = s.to[w[k]]
-            while p1 - k1 <= p - k:
-                k = k + p1 - k1 + 1
-                s = s1
-                if k <= p:
-                    ((k1, p1), s1) = s.to[w[k]]
-            return (s, k)
+        self.dp = (self.source, (0, 0))
 
         # (s, (k, p - 1)) is the canonical reference pair for the active point.
         c = w[p]
         oldr = None
         s1 = None
-        while not check_end_point(s, (k, p - 1), c):
+        while not self.check_end_point(s, (k, p - 1), c):
             if k <= p - 1:  # Implicit case.
-                if s1 == extension(s, (k, p - 1)):
+                if s1 == self.extension(s, (k, p - 1)):
                     redirect_edge(s, (k, p - 1), r)
-                    (s, k) = canonize(s.suf, (k, p - 1))
+                    (s, k) = self.canonize(s.suf, (k, p - 1))
                     continue
                 else:
-                    s1 = extension(s, (k, p - 1))
-                    r = split_edge(s, (k, p - 1))
+                    s1 = self.extension(s, (k, p - 1))
+                    r = self.split_edge(s, (k, p - 1))
             else:
                 r = s # Explicit case.
             r.to[w[p]] = ((p, self.e), sink)
             if oldr != None:
                 oldr.suf = r
             oldr = r
-            (s, k) = canonize(s.suf, (k, p - 1))
+            (s, k) = self.canonize(s.suf, (k, p - 1))
         if oldr != None:
             oldr.suf = s
-        return separate_node(s, (k, p))
+        return self.separate_node(s, (k, p))
 
     def __find(self, k):
         def traverse_nodes(n, key, i, nl):
