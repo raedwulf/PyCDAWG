@@ -47,7 +47,11 @@ class node:
 
 # Cdawg class
 class slidingcdawg:
-    def __init__(self):
+    def __init__(self, debug = False):
+
+        # Debug mode
+        self.debug = debug
+
         # Create the nodes source, sink and _|_.
         self.source = node(id='source')
         self.bt = node(id='root')
@@ -191,6 +195,9 @@ class slidingcdawg:
         (s, k) = self.sk
         self.sk = self.__update(s, (k, self.i))
         self.i += 1
+        # If debugging, render after every character.
+        if self.debug:
+            self.render('out_' + self.w + '.png')
 
     def delete(self):
         pass
@@ -273,11 +280,6 @@ if __name__ == '__main__':
     import sys
 
     # Concatenate the input words and separate using unique symbols.
-    c = slidingcdawg()
+    c = slidingcdawg(debug=True)
     for w in sys.argv[1]:
         c.add(w)
-
-    # Draw
-    c.render('out.png')
-
-
