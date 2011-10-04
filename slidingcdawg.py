@@ -69,17 +69,17 @@ class slidingcdawg:
         self.sink = node(id='sink')
         self.sink.length = self.e
 
-    def extension(self, s, (k, p)):
+    def __extension(self, s, (k, p)):
         # (s, (k, p)) is a canonical reference pair.
         if k > p:
             return s
         return s.to[self.w[k]][1]
 
-    def redirect_edge(self, s, (k, p), r):
+    def __redirect_edge(self, s, (k, p), r):
         (k1, p1) = s.to[self.w[k]][0]
         s.to[self.w[k1]] = ((k1, k1 + p - k), r)
 
-    def split_edge(self, s, (k, p)):
+    def __split_edge(self, s, (k, p)):
         # Let (s, (k1, p1), s1) be the w[k]-edge from s.
         ((k1, p1), s1) = s.to[self.w[k]]
         r = node()
@@ -90,8 +90,8 @@ class slidingcdawg:
         r.len = s.len + p - k + 1
         return r
 
-    def separate_node(self, s, (k, p)):
-        (s1, k1) = self.canonize(s, (k, p))
+    def __separate_node(self, s, (k, p)):
+        (s1, k1) = self.__canonize(s, (k, p))
         # Implicit case.
         if k1 <= p:
             return (s1, k1)
@@ -109,19 +109,19 @@ class slidingcdawg:
         while True:
             # Replace the w[k]-edge from s to s1 by edge (s, (k, p), r1)
             s.to[self.w[k]] = ((k, p), r1)
-            (s, k) = self.canonize(s.suf, (k, p - 1))
-            if (s1, k1) != self.canonize(s, (k, p)):
+            (s, k) = self.__canonize(s.suf, (k, p - 1))
+            if (s1, k1) != self.__canonize(s, (k, p)):
                 break
         return (r1, p + 1)
 
-    def check_end_point(self, s, (k, p), c):
+    def __check_end_point(self, s, (k, p), c):
         if k <= p:  # Implicit case.
             ((k1, p1), s1) = s.to[self.w[k]]
             return c == self.w[k1 + p - k + 1]
         else:
             return c in s.to
 
-    def canonize(self, s, (k, p)):
+    def __canonize(self, s, (k, p)):
         if k > p:
             return (s, k)
         ((k1, p1), s1) = s.to[self.w[k]]
@@ -143,7 +143,7 @@ class slidingcdawg:
             print self.dp
         else:
             (s1, (k1, p1)) = self.dp
-            s1, k1 = self.canonize(s1, (k1, p1))
+            s1, k1 = self.__canonize(s1, (k1, p1))
             p1 += 1
             self.dp = (s1, (k1, p1))
             print self.dp
@@ -152,25 +152,25 @@ class slidingcdawg:
         c = w[p]
         oldr = None
         s1 = None
-        while not self.check_end_point(s, (k, p - 1), c):
+        while not self.__check_end_point(s, (k, p - 1), c):
             if k <= p - 1:  # Implicit case.
-                if s1 == self.extension(s, (k, p - 1)):
-                    self.redirect_edge(s, (k, p - 1), r)
-                    (s, k) = self.canonize(s.suf, (k, p - 1))
+                if s1 == self.__extension(s, (k, p - 1)):
+                    self.__redirect_edge(s, (k, p - 1), r)
+                    (s, k) = self.__canonize(s.suf, (k, p - 1))
                     continue
                 else:
-                    s1 = self.extension(s, (k, p - 1))
-                    r = self.split_edge(s, (k, p - 1))
+                    s1 = self.__extension(s, (k, p - 1))
+                    r = self.__split_edge(s, (k, p - 1))
             else:
                 r = s # Explicit case.
             r.to[w[p]] = ((p, self.e), sink)
             if oldr != None:
                 oldr.suf = r
             oldr = r
-            (s, k) = self.canonize(s.suf, (k, p - 1))
+            (s, k) = self.__canonize(s.suf, (k, p - 1))
         if oldr != None:
             oldr.suf = s
-        return self.separate_node(s, (k, p))
+        return self.__separate_node(s, (k, p))
 
     def __find(self, k):
         def traverse_nodes(n, key, i, nl):
