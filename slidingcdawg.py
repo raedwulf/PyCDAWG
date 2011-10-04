@@ -155,7 +155,7 @@ class slidingcdawg:
         while not self.check_end_point(s, (k, p - 1), c):
             if k <= p - 1:  # Implicit case.
                 if s1 == self.extension(s, (k, p - 1)):
-                    redirect_edge(s, (k, p - 1), r)
+                    self.redirect_edge(s, (k, p - 1), r)
                     (s, k) = self.canonize(s.suf, (k, p - 1))
                     continue
                 else:
