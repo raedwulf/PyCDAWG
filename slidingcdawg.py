@@ -139,11 +139,14 @@ class slidingcdawg:
 
         # Deletion point.
         if len(w) == 1:
-            self.dp = (self.source, 0)
+            self.dp = (self.source, (0, 0))
+            print self.dp
         else:
-            (s1, k1) = self.dp
-            k1 += 1
-            self.dp = self.canonize(s1, (0, k1))
+            (s1, (k1, p1)) = self.dp
+            s1, k1 = self.canonize(s1, (k1, p1))
+            p1 += 1
+            self.dp = (s1, (k1, p1))
+            print self.dp
 
         # (s, (k, p - 1)) is the canonical reference pair for the active point.
         c = w[p]
