@@ -45,6 +45,12 @@ class node:
             self.id = 's' + str(node.sid_count)
             node.sid_count += 1
 
+    #def __repr__(self):
+        #return "(id = %s, len = %s, suffix = %s, edges = %s)" % (self.id, self.len, self.suf, self.to)
+
+    def __repr__(self):
+        return self.id
+
 # Cdawg class
 class slidingcdawg:
     def __init__(self, debug = False):
@@ -88,6 +94,10 @@ class slidingcdawg:
         s.to[self.w[k1]] = ((k1, k1 + p - k), r)
         r.to[self.w[k1 + p - k + 1]] = ((k1 + p - k + 1, p1), s1)
         r.len = s.len + p - k + 1
+        # The edge we are splitting is where the deletion point is
+        (s2, (k2, p2)) = self.dp
+        if s == s2 and self.w[k] == self.w[k2]:
+            self.dp = (r, (k, r.len))
         return r
 
     def __separate_node(self, s, (k, p)):
@@ -140,13 +150,10 @@ class slidingcdawg:
         # Deletion point.
         if len(w) == 1:
             self.dp = (self.source, (0, 0))
-            print self.dp
         else:
             (s1, (k1, p1)) = self.dp
-            s1, k1 = self.__canonize(s1, (k1, p1))
             p1 += 1
             self.dp = (s1, (k1, p1))
-            print self.dp
 
         # (s, (k, p - 1)) is the canonical reference pair for the active point.
         c = w[p]
@@ -187,7 +194,7 @@ class slidingcdawg:
         return traverse_nodes(self.source, k, 0, [])
 
     def __getitem__(self, s):
-        return __find(s)
+        return self.__find(s)
 
     def add(self, c):
         # Add a new character
@@ -201,6 +208,7 @@ class slidingcdawg:
         # If debugging, render after every character.
         if self.debug:
             self.render('out_' + self.w + '.png')
+        print self.dp
 
     def delete(self):
         pass
