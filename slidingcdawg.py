@@ -35,10 +35,15 @@ class node:
             self.len = n.len
             self.suf = n.suf
             self.to = copy(n.to)
+            # Should ye be copied?
+            self.from_ = copy(n.from_)
+            self.credit = n.credit
         else:
             self.len = 0
             self.suf = None
             self.to = {}
+            self.from_ = []
+            self.credit = False
         if id != '':
             self.id = id
         else:
@@ -50,6 +55,10 @@ class node:
 
     def __repr__(self):
         return self.id
+
+    def edge(self, c, (k, p), n):
+        self.to[c] = ((k, p), n)
+        n.from_.append((c, self))
 
 # Cdawg class
 class slidingcdawg:
@@ -83,7 +92,7 @@ class slidingcdawg:
 
     def __redirect_edge(self, s, (k, p), r):
         (k1, p1) = s.to[self.w[k]][0]
-        s.to[self.w[k1]] = ((k1, k1 + p - k), r)
+        s.edge(self.w[k1], (k1, k1 + p - k), r)
 
     def __split_edge(self, s, (k, p)):
         # Let (s, (k1, p1), s1) be the w[k]-edge from s.
@@ -91,8 +100,8 @@ class slidingcdawg:
         r = node()
         # Replace the edge by edges (s, (k1, k1 + p - k), r) and
         # (r, (k1 + p - k + 1, p1), s1).
-        s.to[self.w[k1]] = ((k1, k1 + p - k), r)
-        r.to[self.w[k1 + p - k + 1]] = ((k1 + p - k + 1, p1), s1)
+        s.edge(self.w[k1], (k1, k1 + p - k), r)
+        r.edge(self.w[k1 + p - k + 1], (k1 + p - k + 1, p1), s1)
         r.len = s.len + p - k + 1
         # The edge we are splitting is where the deletion point is
         (s2, (k2, p2)) = self.dp
@@ -118,7 +127,7 @@ class slidingcdawg:
         r1.len = s.len + p - k + 1
         while True:
             # Replace the w[k]-edge from s to s1 by edge (s, (k, p), r1)
-            s.to[self.w[k]] = ((k, p), r1)
+            s.edge(self.w[k], (k, p), r1)
             (s, k) = self.__canonize(s.suf, (k, p - 1))
             if (s1, k1) != self.__canonize(s, (k, p)):
                 break
@@ -170,7 +179,7 @@ class slidingcdawg:
                     r = self.__split_edge(s, (k, p - 1))
             else:
                 r = s # Explicit case.
-            r.to[w[p]] = ((p, self.e), sink)
+            r.edge(w[p], (p, self.e), sink)
             if oldr != None:
                 oldr.suf = r
             oldr = r
@@ -201,7 +210,7 @@ class slidingcdawg:
         self.w += c
         # Create a new edge (_|_, (i, i), source)
         if c not in self.bt.to:
-            self.bt.to[c] = ((self.i, self.i), self.source)
+            self.bt.edge(c, (self.i, self.i), self.source)
         (s, k) = self.sk
         self.sk = self.__update(s, (k, self.i))
         self.i += 1
@@ -211,7 +220,49 @@ class slidingcdawg:
         print self.dp
 
     def delete(self):
-        pass
+        # Get the deletion point.
+        (s, (k, p)) = self.dp
+        cp = k
+        #if s == root:
+            #cp += 1
+        # Update the delete point
+        self.dp = self.__canonize(s.suf, (cp, p))
+        # Need to shorten (active point on backbone).
+        if self.sk[1] <= self.i - 1 and self.sk[0] == s and self.w[self.sk[1]] == self.w[k]:
+            # Shorten the path
+            ((k1, p1), s1) = s.to[self.w[k]]
+            s.to[self.w[k]] = ((self.sk[1], p1), s1)
+            # Update the active point
+            if self.sk[0] == self.source:
+                self.sk = (self.source, self.sk[1] + 1)
+            else:
+                self.sk = self.__canonize(self.sk[0].suf, (self.sk[1], self.i - 1))
+        else: # Need to delete an edge.
+            # Delete the offending edge
+            del s.to[self.w[k]]
+            # Out-degree == 1 and parent ain't root
+            if len(s.to) == 1 and s != self.bt:
+                # Get the last edge and delete it
+                (kl, pl), sl = s.to[s.to.keys()[0]]
+                del s.to[s.to.keys()[0]]
+                # Update the length
+                length = sl.len
+                # Update labels and ends
+                for c, n in s.from_:
+                    if self.sk[0] == n:
+                        (kt, pt), st = n.to[c]
+                        self.sk = (n, self.sk[1] - pt - kt + 1)
+                    # FIXME: Somehow redirect?
+                    ((k1, p1), s1) = n.to[c]
+                    n.edge(c, (k1, pl), sl)
+                # Delete this node
+                del s
+            elif len(self.w) == 1:
+                s.to = {}
+            else:
+                print "delete broken...."
+        if self.debug:
+            self.render('out_' + self.w + '_.png')
 
     def render(self, outfile):
         import pygraphviz
@@ -294,3 +345,5 @@ if __name__ == '__main__':
     c = slidingcdawg(debug=True)
     for w in sys.argv[1]:
         c.add(w)
+
+    c.delete()
