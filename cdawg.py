@@ -161,14 +161,16 @@ class cdawg:
         return separate_node(s, (k, p))
 
     def __findend(self, k):
+        #print '__findend:', k
         def traverse_nodes(n, key, i):
+            #print 'traverse', key, i, n.id
             for (c, ((k, p), n1)) in n.to.items():
                 if c == key[i]:
                     if key[i:i+p-k] == self.w[k:p]:
-                        if len(key) == i + p - k and len(key) == self.length[self.w[p]]:
+                        if ord(self.w[p]) >= 256 and len(key) == self.length[self.w[p]]:
                             return self.w[p]
                         else:
-                            traverse_nodes(n1, key, i+p-k)
+                            return traverse_nodes(n1, key, i+p-k+1)
                     else:
                         return None
         return traverse_nodes(self.source, k, 0)
@@ -253,7 +255,7 @@ class cdawg:
                     graph.add_node(node)
                     need_traverse = True
                 # Get the label.
-                l = word[k-1:p]
+                l = word[k:p+1]
                 # Add the edge.
                 if n.id == 'root':
                     if not root_once:
@@ -287,10 +289,13 @@ if __name__ == '__main__':
 
     # Concatenate the input words and separate using unique symbols.
     c = cdawg()
+    j = 0
     for w in sys.argv[1:]:
-        c[w] = "Testing 123"
+        c[w] = j
+        j += 1
 
-    print c['hello']
+    for w in sys.argv[1:]:
+        print w, c[w]
 
     # Draw
     c.render('out.png')
